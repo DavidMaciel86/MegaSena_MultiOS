@@ -2,8 +2,6 @@
 from __future__ import annotations
 
 from flask import Flask, request, render_template_string, redirect, url_for
-from flask import send_from_directory
-
 
 from core import aplicar_seed, gerar_surpresinhas, preparar_pool_com_globo
 from storage import obter_pasta_historico, listar_historicos, ler_historico, salvar_historico_json
@@ -14,10 +12,6 @@ HTML = """
 <!doctype html>
 <html lang="pt-br">
 <head>
-  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
-  <meta name="theme-color" content="#111111">
-  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-180.png') }}">
-
   <meta charset="utf-8">
   <title>MegaSurpresinhas (Web)</title>
   <style>
@@ -33,7 +27,6 @@ HTML = """
     .pill { display:inline-block; padding:4px 8px; border:1px solid #ddd; border-radius:999px; margin:2px; }
   </style>
 </head>
-
 <body>
   <h2>MegaSurpresinhas (Interface Web)</h2>
 
@@ -111,26 +104,6 @@ HTML = """
       <pre>{{ historico_detalhe }}</pre>
     </div>
   {% endif %}
-  
-  <script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("/sw.js");
-    });
-  }
-</script>
-  
-  <script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker
-        .register("/sw.js")
-        .then(() => console.log("Service Worker registrado"))
-        .catch(err => console.error("Erro no SW:", err));
-    });
-  }
-</script>
-  
 </body>
 </html>
 """
@@ -229,11 +202,6 @@ def ver_historico(nome: str):
         historico_detalhe=data,
         erro=None,
     )
-
-
-@app.get("/sw.js")
-def sw():
-    return send_from_directory("static", "sw.js", mimetype="application/javascript")
 
 
 def _render_erro(msg: str, seed_raw: str, qtd_surpresinhas: int, qtd_dezenas: int):
