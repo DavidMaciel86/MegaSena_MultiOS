@@ -1,4 +1,3 @@
-# web_app.py
 from __future__ import annotations
 
 import requests
@@ -14,7 +13,12 @@ from flask import (
 )
 
 from core import aplicar_seed, gerar_surpresinhas, preparar_pool_com_globo
-from storage import obter_pasta_historico, listar_historicos, ler_historico, salvar_historico_json
+from storage import (
+    obter_pasta_historico,
+    listar_historicos,
+    ler_historico,
+    salvar_historico_json,
+)
 
 app = Flask(__name__)
 
@@ -29,6 +33,8 @@ def service_worker():
 
 @app.get("/manifest.webmanifest")
 def manifest():
+    # Se o arquivo estiver na raiz do projeto, este caminho está correto.
+    # Se você moveu o manifest para /static, troque "." por "static".
     resp = make_response(send_from_directory(".", "manifest.webmanifest"))
     resp.headers["Content-Type"] = "application/manifest+json"
     resp.headers["Cache-Control"] = "no-cache"
@@ -46,7 +52,7 @@ HTML = """
   <meta name="theme-color" content="#111111">
 
   <title>MegaSurpresinhas (Web)</title>
-  
+
   <style>
     body { font-family: Arial, sans-serif; margin: 18px; }
     .box { padding: 12px; border: 1px solid #ddd; border-radius: 10px; margin-bottom: 14px; }
@@ -67,24 +73,8 @@ HTML = """
     <form method="post" action="{{ url_for('gerar') }}">
       <div class="row">
         <label>Seed (opcional)
-  <input type="number" name="seed" placeholder="ENTER = aleatório" value="{{ seed or '' }}">
-  
-  <h3>Resultado gerado:</h3>
-
-<div class="result">
-  {{ resultado }}
-</div>
-
-  
- <span class="small">
-  <b>Seed utilizada:</b>
-  {% if seed is not none and seed != "" %}
-    {{ seed }}
-  {% else %}
-    aleatória
-  {% endif %}
-</span>
-
+          <input type="number" name="seed" placeholder="ENTER = aleatório" value="{{ seed or '' }}">
+        </label>
 
         <label>Qtd. surpresinhas (1–12)
           <input type="number" name="qtd_surpresinhas" min="1" max="12" value="{{ qtd_surpresinhas }}">
@@ -97,6 +87,15 @@ HTML = """
         <button type="submit">Gerar e salvar histórico</button>
       </div>
     </form>
+
+    <p class="small">
+      <b>Seed utilizada:</b>
+      {% if seed is not none and seed != "" %}
+        {{ seed }}
+      {% else %}
+        aleatória
+      {% endif %}
+    </p>
 
     <p class="small">
       Pasta do histórico: <b>{{ pasta_historico }}</b>
@@ -137,9 +136,9 @@ HTML = """
       <pre>{{ historico_detalhe }}</pre>
     </div>
   {% endif %}
-  
+
   <script src="/static/js/app.js"></script>
-  
+
 </body>
 </html>
 """
@@ -180,9 +179,19 @@ def gerar():
 
     # validações
     if not (1 <= qtd_surpresinhas <= 12):
-        return _render_erro("Qtd. de surpresinhas deve ser entre 1 e 12.", seed_raw, qtd_surpresinhas, qtd_dezenas)
+        return _render_erro(
+            "Qtd. de surpresinhas deve ser entre 1 e 12.",
+            seed_raw,
+            qtd_surpresinhas,
+            qtd_dezenas,
+        )
     if not (6 <= qtd_dezenas <= 12):
-        return _render_erro("Qtd. de dezenas deve ser entre 6 e 12.", seed_raw, qtd_surpresinhas, qtd_dezenas)
+        return _render_erro(
+            "Qtd. de dezenas deve ser entre 6 e 12.",
+            seed_raw,
+            qtd_surpresinhas,
+            qtd_dezenas,
+        )
 
     try:
         aplicar_seed(seed)
@@ -196,10 +205,12 @@ def gerar():
             seed=seed,
         )
 
-    except requests.exceptions.RequestException:
-
+    # ⬇️ AQUI está a principal adaptação:
+    except (requests.exceptions.RequestException, RuntimeError):
+        # RequestException -> erro de rede / HTTP
+        # RuntimeError (ou similar) -> erro ao processar dados oficiais
         return _render_erro(
-            "Falha ao acessar a API da Mega-Sena. Verifique sua conexão.",
+            "Falha ao acessar os resultados oficiais da Mega-Sena. Verifique sua conexão.",
             seed_raw,
             qtd_surpresinhas,
             qtd_dezenas,
@@ -220,6 +231,22 @@ def gerar():
             qtd_surpresinhas,
             qtd_dezenas,
         )
+
+    # sucesso
+    pasta = str(obter_pasta_historico())
+    historicos = listar_historicos()[:10]
+    return render_template_string(
+        HTML,
+        seed=seed_raw,
+        qtd_surpresinhas=qtd_surpresinhas,
+        qtd_dezenas=qtd_dezenas,
+        pasta_historico=pasta,
+        resultado=surpresinhas,
+        caminho_salvo=str(caminho),
+        historicos=historicos,
+        historico_detalhe=None,
+        erro=None,
+    )
 
 
 @app.get("/historico/<nome>")
@@ -266,3 +293,4 @@ def _render_erro(msg: str, seed_raw: str, qtd_surpresinhas: int, qtd_dezenas: in
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=True)
+

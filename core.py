@@ -8,11 +8,22 @@ import requests
 
 API_BASE = "https://servicebus2.caixa.gov.br/portaldeloterias/api/megasena"
 
+COMMON_HEADERS = {
+    "Accept": "application/json, text/plain, */*",
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/126.0 Safari/537.36"
+    ),
+    # alguns servidores da Caixa gostam de ver esses cabeçalhos:
+    "Origin": "https://loterias.caixa.gov.br",
+    "Referer": "https://loterias.caixa.gov.br/",
+}
+
 
 def obter_ultimo_concurso() -> int:
     url = API_BASE
-    headers = {"Accept": "application/json"}
-    response = requests.get(url, headers=headers, timeout=15)
+    response = requests.get(url, headers=COMMON_HEADERS, timeout=15)
     response.raise_for_status()
     dados = response.json()
     return int(dados["numero"])
@@ -20,8 +31,7 @@ def obter_ultimo_concurso() -> int:
 
 def obter_concurso(numero_concurso: int) -> dict:
     url = f"{API_BASE}/{numero_concurso}"
-    headers = {"Accept": "application/json"}
-    response = requests.get(url, headers=headers, timeout=15)
+    response = requests.get(url, headers=COMMON_HEADERS, timeout=15)
     response.raise_for_status()
     return response.json()
 
@@ -32,20 +42,24 @@ def coletar_ultimos_10_resultados() -> List[int]:
 
     for concurso in range(ultimo_concurso, ultimo_concurso - 10, -1):
         dados_concurso = obter_concurso(concurso)
-        lista_dezenas = dados_concurso["listaDezenas"]  # strings
+        lista_dezenas = dados_concurso["listaDezenas"]  # vem como strings
         dezenas_int = [int(d) for d in lista_dezenas]
-        pool_dezenas.extend(dezenas_int)  # ponderado pela repetição
+        pool_dezenas.extend(dezenas_int)  # repetições contam mais no pool
 
     return pool_dezenas
 
 
-def gerar_surpresinhas(qtd_surpresinhas: int, qtd_dezenas: int, pool_dezenas: List[int]) -> List[List[int]]:
+def gerar_surpresinhas(
+    qtd_surpresinhas: int,
+    qtd_dezenas: int,
+    pool_dezenas: List[int],
+) -> List[List[int]]:
     surpresinhas: List[List[int]] = []
 
     for _ in range(qtd_surpresinhas):
         jogo: List[int] = []
         while len(jogo) < qtd_dezenas:
-            numero = random.choice(pool_dezenas)  # ponderado pela repetição no pool
+            numero = random.choice(pool_dezenas)
             if numero not in jogo:
                 jogo.append(numero)
 
@@ -57,7 +71,7 @@ def gerar_surpresinhas(qtd_surpresinhas: int, qtd_dezenas: int, pool_dezenas: Li
 
 def preparar_pool_com_globo() -> List[int]:
     pool = coletar_ultimos_10_resultados()
-    pool.extend(range(1, 61))  # garante chance mínima p/ todas dezenas
+    pool.extend(range(1, 61))  # garante chance mínima p/ todas as dezenas
     return pool
 
 
