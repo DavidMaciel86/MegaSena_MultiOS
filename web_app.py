@@ -1,19 +1,52 @@
 # web_app.py
 from __future__ import annotations
 
-from flask import Flask, request, render_template_string, redirect, url_for
+import requests
+
+from flask import (
+    Flask,
+    request,
+    render_template_string,
+    redirect,
+    url_for,
+    send_from_directory,
+    make_response,
+)
 
 from core import aplicar_seed, gerar_surpresinhas, preparar_pool_com_globo
 from storage import obter_pasta_historico, listar_historicos, ler_historico, salvar_historico_json
 
 app = Flask(__name__)
 
+
+@app.get("/sw.js")
+def service_worker():
+    resp = make_response(send_from_directory("static/js", "sw.js"))
+    resp.headers["Content-Type"] = "application/javascript"
+    resp.headers["Cache-Control"] = "no-cache"
+    return resp
+
+
+@app.get("/manifest.webmanifest")
+def manifest():
+    resp = make_response(send_from_directory(".", "manifest.webmanifest"))
+    resp.headers["Content-Type"] = "application/manifest+json"
+    resp.headers["Cache-Control"] = "no-cache"
+    return resp
+
+
 HTML = """
 <!doctype html>
 <html lang="pt-br">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <meta name="theme-color" content="#111111">
+
   <title>MegaSurpresinhas (Web)</title>
+  
   <style>
     body { font-family: Arial, sans-serif; margin: 18px; }
     .box { padding: 12px; border: 1px solid #ddd; border-radius: 10px; margin-bottom: 14px; }
@@ -104,6 +137,9 @@ HTML = """
       <pre>{{ historico_detalhe }}</pre>
     </div>
   {% endif %}
+  
+  <script src="/static/js/app.js"></script>
+  
 </body>
 </html>
 """
@@ -112,7 +148,7 @@ HTML = """
 def _parse_int(value: str, default: int) -> int:
     try:
         return int(value)
-    except Exception:
+    except ValueError:
         return default
 
 
@@ -160,23 +196,30 @@ def gerar():
             seed=seed,
         )
 
-    except Exception as e:
-        return _render_erro(f"Falha ao gerar (API/Internet?): {e}", seed_raw, qtd_surpresinhas, qtd_dezenas)
+    except requests.exceptions.RequestException:
 
-    pasta = str(obter_pasta_historico())
-    historicos = listar_historicos()[:10]
-    return render_template_string(
-        HTML,
-        seed=seed,
-        qtd_surpresinhas=qtd_surpresinhas,
-        qtd_dezenas=qtd_dezenas,
-        pasta_historico=pasta,
-        resultado=surpresinhas,
-        caminho_salvo=str(caminho),
-        historicos=historicos,
-        historico_detalhe=None,
-        erro=None,
-    )
+        return _render_erro(
+            "Falha ao acessar a API da Mega-Sena. Verifique sua conexão.",
+            seed_raw,
+            qtd_surpresinhas,
+            qtd_dezenas,
+        )
+
+    except ValueError as e:
+        return _render_erro(
+            f"Erro de validação dos dados: {e}",
+            seed_raw,
+            qtd_surpresinhas,
+            qtd_dezenas,
+        )
+
+    except Exception as e:
+        return _render_erro(
+            f"Erro inesperado ao gerar as surpresinhas: {e}",
+            seed_raw,
+            qtd_surpresinhas,
+            qtd_dezenas,
+        )
 
 
 @app.get("/historico/<nome>")
