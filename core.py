@@ -121,7 +121,7 @@ def preparar_pool_com_globo_com_status() -> Tuple[List[int], str, str, str]:
             pool,
             "online",
             "api_alt",
-            "Dados atualizados via API alternativa (internet). Cache foi atualizado.",
+            "Dados atualizados via consulta à internet. Cache foi atualizado.",
         )
 
     except requests.exceptions.RequestException:
@@ -143,7 +143,7 @@ def preparar_pool_com_globo_com_status() -> Tuple[List[int], str, str, str]:
             pool_offline,
             "offline",
             "estatistico",
-            "Modo offline/estatístico: sem acesso à internet (API) e sem cache disponível.",
+            "Modo offline/Usando gerador estatístico: sem acesso à internet (API) e sem cache disponível.",
         )
 
     except Exception:
@@ -164,7 +164,7 @@ def preparar_pool_com_globo_com_status() -> Tuple[List[int], str, str, str]:
             pool_offline,
             "offline",
             "estatistico",
-            "Modo offline/estatístico: falha geral e sem cache disponível.",
+            "Modo offline/Usando gerador estatístico: falha geral e sem cache disponível.",
         )
 
 
