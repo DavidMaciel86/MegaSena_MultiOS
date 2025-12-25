@@ -64,7 +64,7 @@ function renderHistorico() {
 
 function handleLimparHistorico() {
   const ok = confirm(
-    "Tem certeza que deseja apagar todo o histórico deste dispositivo?\n\nEssa ação não pode ser desfeita."
+    "Tem certeza que deseja apagar todo o histórico gerado deste dispositivo?\n\nEssa ação não pode ser desfeita."
   );
   if (!ok) return;
 

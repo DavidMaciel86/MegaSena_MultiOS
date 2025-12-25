@@ -57,7 +57,7 @@ HTML = """
   </style>
 </head>
 <body>
-  <h2>MegaSurpresinhas (Interface Web)</h2>
+  <h2>MegaSurpresinhas </h2>
 
   <div class="box">
     <form method="post" action="{{ url_for('gerar') }}">
@@ -74,7 +74,7 @@ HTML = """
           <input type="number" name="qtd_dezenas" min="6" max="12" value="{{ qtd_dezenas }}">
         </label>
 
-        <button type="submit">Gerar e salvar histórico</button>
+        <button type="submit">Gerar</button>
       </div>
     </form>
 
@@ -124,7 +124,7 @@ HTML = """
   {% endif %}
 
   <div class="box">
-    <b>Últimos históricos:</b>
+    <b>Histórico:</b>
     {% if historicos %}
       <div style="margin-top: 8px;">
         {% for item in historicos %}

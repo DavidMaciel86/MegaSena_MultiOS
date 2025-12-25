@@ -92,7 +92,7 @@ def preparar_pool_com_globo() -> List[int]:
     Mantida para compatibilidade: retorna SOMENTE o pool.
     (Sem status para não quebrar o código atual.)
     """
-    pool, _, _ = preparar_pool_com_globo_com_status()
+    pool, _modo, _fonte, _mensagem = preparar_pool_com_globo_com_status()
     return pool
 
 
