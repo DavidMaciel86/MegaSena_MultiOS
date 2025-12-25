@@ -123,30 +123,38 @@ HTML = """
     </div>
   {% endif %}
 
-  <div class="box">
-    <b>Histórico:</b>
-    {% if historicos %}
-      <div style="margin-top: 8px;">
-        {% for item in historicos %}
-          <div style="margin: 6px 0;">
-            <span class="pill">{{ loop.index }}</span>
-            <a href="{{ url_for('ver_historico', nome=item.name) }}">{{ item.name }}</a>
-          </div>
-        {% endfor %}
-      </div>
-    {% else %}
-      <div class="small">Nenhum histórico salvo ainda.</div>
-    {% endif %}
+    <div class="box">
+    <b>Histórico neste dispositivo:</b>
+
+    <div id="historico-local" style="margin-top: 8px;"></div>
+
+    <button
+      type="button"
+      style="margin-top: 10px;"
+      onclick="handleLimparHistorico()"
+    >
+      Limpar histórico
+    </button>
+
+    <div class="small" style="margin-top: 6px;">
+      O histórico é salvo apenas neste dispositivo.
+    </div>
   </div>
 
-  {% if historico_detalhe %}
-    <div class="box">
-      <b>Detalhe do histórico:</b>
-      <pre>{{ historico_detalhe }}</pre>
-    </div>
+  <script src="/static/js/app.js"></script>
+  
+    {% if resultado %}
+  <script>
+    salvarHistorico({
+      data: new Date().toLocaleString(),
+      modo: "{{ modo }}",
+      fonte: "{{ fonte }}",
+      jogos: {{ resultado | tojson }}
+    });
+    renderHistorico();
+  </script>
   {% endif %}
 
-  <script src="/static/js/app.js"></script>
 
 </body>
 </html>
