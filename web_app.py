@@ -30,6 +30,7 @@ def service_worker():
     resp.headers["Cache-Control"] = "no-cache"
     return resp
 
+
 HTML = """
 <!doctype html>
 <html lang="pt-br">
