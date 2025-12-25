@@ -56,7 +56,14 @@ function renderHistorico() {
       <span class="small">
         ${item.data} — ${item.modo} / ${item.fonte}
       </span>
-      <pre>${JSON.stringify(item.jogos, null, 2)}</pre>
+      <div class="small" style="margin-top:6px;">
+        ${item.jogos
+          .map((jogo, i) =>
+            `${i + 1}) ${jogo.map(n => String(n).padStart(2, "0")).join(" · ")}`
+          )
+          .join("<br>")}
+      </div>
+
     `;
     container.appendChild(div);
   });
