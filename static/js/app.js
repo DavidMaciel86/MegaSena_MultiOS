@@ -153,3 +153,49 @@ function showUpdateBanner(worker) {
   document.body.appendChild(banner);
 }
 
+/* ================================
+   Tema (claro/escuro) com persistência
+================================ */
+const THEME_KEY = "megasurpresinhas_theme"; // "light" | "dark"
+
+function applyTheme(theme) {
+  const root = document.documentElement;
+  root.setAttribute("data-theme", theme);
+
+  const icon = document.getElementById("theme-icon");
+  const label = document.getElementById("theme-label");
+
+  if (icon && label) {
+    if (theme === "dark") {
+      icon.textContent = "☀️";
+      label.textContent = "Modo claro";
+    } else {
+      icon.textContent = "🌙";
+      label.textContent = "Modo escuro";
+    }
+  }
+}
+
+function getPreferredTheme() {
+  const saved = localStorage.getItem(THEME_KEY);
+  if (saved === "light" || saved === "dark") return saved;
+
+  // padrão: seguir o sistema na primeira vez
+  const prefersDark = window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+  return prefersDark ? "dark" : "light";
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute("data-theme") || "light";
+  const next = current === "dark" ? "light" : "dark";
+  localStorage.setItem(THEME_KEY, next);
+  applyTheme(next);
+}
+
+// aplicar tema ao carregar
+document.addEventListener("DOMContentLoaded", () => {
+  applyTheme(getPreferredTheme());
+});
+

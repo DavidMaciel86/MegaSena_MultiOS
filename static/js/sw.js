@@ -1,4 +1,4 @@
-const CACHE_NAME = "megasurpresinhas-v4";
+const CACHE_NAME = "megasurpresinhas-v5";
 
 const ASSETS = [
   "/static/manifest.webmanifest",

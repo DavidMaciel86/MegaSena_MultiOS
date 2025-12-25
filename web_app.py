@@ -44,20 +44,118 @@ HTML = """
   <title>MegaSurpresinhas (Web)</title>
 
   <style>
-    body { font-family: Arial, sans-serif; margin: 18px; }
-    .box { padding: 12px; border: 1px solid #ddd; border-radius: 10px; margin-bottom: 14px; }
-    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
-    label { display: flex; flex-direction: column; gap: 6px; }
-    input, select { padding: 8px; min-width: 180px; }
-    button { padding: 10px 14px; cursor: pointer; }
-    pre { background:#f7f7f7; padding:10px; border-radius:10px; overflow:auto; }
-    a { text-decoration: none; }
-    .small { color:#555; font-size: 12px; }
-    .pill { display:inline-block; padding:4px 8px; border:1px solid #ddd; border-radius:999px; margin:2px; }
-  </style>
+  :root{
+    --bg: #ffffff;
+    --text: #111111;
+    --muted: #555555;
+    --border: #dddddd;
+    --box-bg: #ffffff;
+    --pre-bg: #f7f7f7;
+    --btn-bg: #ffffff;
+    --btn-text: #111111;
+    --btn-border: #cccccc;
+    --pill-bg: #ffffff;
+  }
+
+  /* Quando o usuário escolher dark */
+  [data-theme="dark"]{
+    --bg: #0f1115;
+    --text: #e8e8e8;
+    --muted: #b8b8b8;
+    --border: #2a2f3a;
+    --box-bg: #131722;
+    --pre-bg: #0b0e14;
+    --btn-bg: #1c2230;
+    --btn-text: #e8e8e8;
+    --btn-border: #2a2f3a;
+    --pill-bg: #131722;
+  }
+
+  body {
+    font-family: Arial, sans-serif;
+    margin: 18px;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .box {
+    padding: 12px;
+    border: 1px solid var(--border);
+    background: var(--box-bg);
+    border-radius: 10px;
+    margin-bottom: 14px;
+  }
+
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
+  label { display: flex; flex-direction: column; gap: 6px; }
+
+  input, select {
+    padding: 8px;
+    min-width: 180px;
+    background: var(--box-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  button {
+    padding: 10px 14px;
+    cursor: pointer;
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    border: 1px solid var(--btn-border);
+    border-radius: 8px;
+  }
+
+  pre {
+    background: var(--pre-bg);
+    padding: 10px;
+    border-radius: 10px;
+    overflow: auto;
+    border: 1px solid var(--border);
+  }
+
+  a { text-decoration: none; color: inherit; }
+  a:hover { text-decoration: underline; }
+
+  .small { color: var(--muted); font-size: 12px; }
+
+  .pill {
+    display:inline-block;
+    padding:4px 8px;
+    border:1px solid var(--border);
+    border-radius:999px;
+    margin:2px;
+    background: var(--pill-bg);
+  }
+
+  /* Botão de tema no topo */
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:12px;
+  }
+
+  .theme-btn{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:12px;
+  }
+</style>
+
 </head>
 <body>
-  <h2>MegaSurpresinhas </h2>
+    <div class="topbar">
+    <h2 style="margin:0;">MegaSurpresinhas</h2>
+
+    <button type="button" class="theme-btn" onclick="toggleTheme()">
+      <span id="theme-icon">🌙</span>
+      <span id="theme-label">Modo escuro</span>
+    </button>
+  </div>
 
   <div class="box">
     <form method="post" action="{{ url_for('gerar') }}">
