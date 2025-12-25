@@ -12,7 +12,7 @@ from flask import (
     make_response,
 )
 
-from core import aplicar_seed, gerar_surpresinhas, preparar_pool_com_globo
+from core import aplicar_seed, gerar_surpresinhas, preparar_pool_com_globo_com_status
 from storage import (
     obter_pasta_historico,
     listar_historicos,
@@ -30,15 +30,15 @@ def service_worker():
     resp.headers["Cache-Control"] = "no-cache"
     return resp
 
-
-@app.get("/manifest.webmanifest")
-def manifest():
-    # Se o arquivo estiver na raiz do projeto, este caminho está correto.
-    # Se você moveu o manifest para /static, troque "." por "static".
-    resp = make_response(send_from_directory(".", "manifest.webmanifest"))
-    resp.headers["Content-Type"] = "application/manifest+json"
-    resp.headers["Cache-Control"] = "no-cache"
-    return resp
+# Desnecessário: Flask já expõe arquivos em /static, incluindo o manifest.webmanifest
+#@app.get("/manifest.webmanifest")
+#def manifest():
+#     Se o arquivo estiver na raiz do projeto, este caminho está correto.
+#     Se você moveu o manifest para /static, troque "." por "static".
+#     resp = make_response(send_from_directory(".", "manifest.webmanifest"))
+#     resp.headers["Content-Type"] = "application/manifest+json"
+#     resp.headers["Cache-Control"] = "no-cache"
+#     return resp
 
 
 HTML = """
@@ -166,6 +166,9 @@ def index():
         historicos=historicos,
         historico_detalhe=None,
         erro=None,
+        modo=None,
+        msg_status=None,
+
     )
 
 
@@ -195,7 +198,7 @@ def gerar():
 
     try:
         aplicar_seed(seed)
-        pool = preparar_pool_com_globo()
+        pool, modo, msg_status = preparar_pool_com_globo_com_status()
         surpresinhas = gerar_surpresinhas(qtd_surpresinhas, qtd_dezenas, pool)
 
         caminho = salvar_historico_json(
@@ -246,6 +249,8 @@ def gerar():
         historicos=historicos,
         historico_detalhe=None,
         erro=None,
+        modo=modo,
+        msg_status=msg_status,
     )
 
 
@@ -271,6 +276,8 @@ def ver_historico(nome: str):
         historicos=historicos,
         historico_detalhe=data,
         erro=None,
+        modo=None,
+        msg_status=None,
     )
 
 
@@ -288,6 +295,8 @@ def _render_erro(msg: str, seed_raw: str, qtd_surpresinhas: int, qtd_dezenas: in
         historicos=historicos,
         historico_detalhe=None,
         erro=msg,
+        modo=None,
+        msg_status=None,
     )
 
 
