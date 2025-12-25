@@ -30,17 +30,6 @@ def service_worker():
     resp.headers["Cache-Control"] = "no-cache"
     return resp
 
-# Desnecessário: Flask já expõe arquivos em /static, incluindo o manifest.webmanifest
-#@app.get("/manifest.webmanifest")
-#def manifest():
-#     Se o arquivo estiver na raiz do projeto, este caminho está correto.
-#     Se você moveu o manifest para /static, troque "." por "static".
-#     resp = make_response(send_from_directory(".", "manifest.webmanifest"))
-#     resp.headers["Content-Type"] = "application/manifest+json"
-#     resp.headers["Cache-Control"] = "no-cache"
-#     return resp
-
-
 HTML = """
 <!doctype html>
 <html lang="pt-br">
@@ -101,6 +90,25 @@ HTML = """
       Pasta do histórico: <b>{{ pasta_historico }}</b>
     </p>
   </div>
+
+  <!-- ✅ STATUS DE ORIGEM DOS DADOS -->
+  {% if msg_status %}
+    <div class="box small">
+      <b>Modo:</b> {{ modo }} —
+      <b>Fonte:</b>
+      {% if fonte == "api_alt" %}
+        Internet (API alternativa)
+      {% elif fonte == "cache" %}
+        Cache local
+      {% elif fonte == "estatistico" %}
+        Estatístico (1–60)
+      {% else %}
+        —
+      {% endif %}
+      <br>
+      {{ msg_status }}
+    </div>
+  {% endif %}
 
   {% if erro %}
     <div class="box"><b>Erro:</b> {{ erro }}</div>
@@ -168,7 +176,7 @@ def index():
         erro=None,
         modo=None,
         msg_status=None,
-
+        fonte=None,
     )
 
 
@@ -198,7 +206,7 @@ def gerar():
 
     try:
         aplicar_seed(seed)
-        pool, modo, msg_status = preparar_pool_com_globo_com_status()
+        pool, modo, fonte, msg_status = preparar_pool_com_globo_com_status()
         surpresinhas = gerar_surpresinhas(qtd_surpresinhas, qtd_dezenas, pool)
 
         caminho = salvar_historico_json(
@@ -251,6 +259,7 @@ def gerar():
         erro=None,
         modo=modo,
         msg_status=msg_status,
+        fonte=fonte,
     )
 
 
@@ -278,6 +287,7 @@ def ver_historico(nome: str):
         erro=None,
         modo=None,
         msg_status=None,
+        fonte=None,
     )
 
 
@@ -297,9 +307,9 @@ def _render_erro(msg: str, seed_raw: str, qtd_surpresinhas: int, qtd_dezenas: in
         erro=msg,
         modo=None,
         msg_status=None,
+        fonte=None,
     )
 
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=True)
-

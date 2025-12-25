@@ -96,10 +96,12 @@ def preparar_pool_com_globo() -> List[int]:
     return pool
 
 
-def preparar_pool_com_globo_com_status() -> Tuple[List[int], str, str]:
+def preparar_pool_com_globo_com_status() -> Tuple[List[int], str, str, str]:
     """
-    Retorna: (pool, modo, mensagem)
-    modo: "online" | "cache" | "offline"
+    Retorna: (pool, modo, fonte, mensagem)
+
+    modo:  "online" | "cache" | "offline"
+    fonte: "api_alt" | "cache" | "estatistico"
     """
     # 1) tenta online (API alternativa)
     try:
@@ -118,10 +120,11 @@ def preparar_pool_com_globo_com_status() -> Tuple[List[int], str, str]:
         return (
             pool,
             "online",
-            "Dados atualizados via API alternativa. Cache foi atualizado.",
+            "api_alt",
+            "Dados atualizados via API alternativa (internet). Cache foi atualizado.",
         )
 
-    except requests.exceptions.RequestException as e:
+    except requests.exceptions.RequestException:
         # 2) tenta cache
         cache = _ler_cache()
         if cache and cache.get("pool_ultimos_10"):
@@ -130,7 +133,8 @@ def preparar_pool_com_globo_com_status() -> Tuple[List[int], str, str]:
             return (
                 pool_cache,
                 "cache",
-                "Não foi possível atualizar agora. Usando dados salvos (cache).",
+                "cache",
+                "Não foi possível atualizar agora. Usando dados salvos localmente (cache).",
             )
 
         # 3) offline / estatístico
@@ -138,7 +142,8 @@ def preparar_pool_com_globo_com_status() -> Tuple[List[int], str, str]:
         return (
             pool_offline,
             "offline",
-            "Modo offline/estatístico: sem acesso à API e sem cache disponível.",
+            "estatistico",
+            "Modo offline/estatístico: sem acesso à internet (API) e sem cache disponível.",
         )
 
     except Exception:
@@ -150,13 +155,15 @@ def preparar_pool_com_globo_com_status() -> Tuple[List[int], str, str]:
             return (
                 pool_cache,
                 "cache",
-                "Falha ao processar atualização. Usando dados salvos (cache).",
+                "cache",
+                "Falha ao processar atualização. Usando dados salvos localmente (cache).",
             )
 
         pool_offline = list(range(1, 61))
         return (
             pool_offline,
             "offline",
+            "estatistico",
             "Modo offline/estatístico: falha geral e sem cache disponível.",
         )
 
