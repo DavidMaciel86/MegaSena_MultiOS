@@ -66,3 +66,40 @@ function renderHistorico() {
   });
 }
 
+/* ================================
+   Tema (claro/escuro) com persistência
+================================ */
+const THEME_KEY = "megasurpresinhas_theme";
+
+function applyTheme(theme) {
+  const root = document.documentElement; // <html>
+  root.setAttribute("data-theme", theme);
+
+  const icon = document.getElementById("theme-icon");
+  const label = document.getElementById("theme-label");
+
+  if (theme === "dark") {
+    if (icon) icon.textContent = "☀️";
+    if (label) label.textContent = "Modo claro";
+  } else {
+    if (icon) icon.textContent = "🌙";
+    if (label) label.textContent = "Modo escuro";
+  }
+}
+
+function getSavedTheme() {
+  const saved = localStorage.getItem(THEME_KEY);
+  return saved === "dark" ? "dark" : "light";
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute("data-theme") || "light";
+  const next = current === "dark" ? "light" : "dark";
+  localStorage.setItem(THEME_KEY, next);
+  applyTheme(next);
+}
+
+// Aplica tema ao abrir o app
+document.addEventListener("DOMContentLoaded", () => {
+  applyTheme(getSavedTheme());
+});
