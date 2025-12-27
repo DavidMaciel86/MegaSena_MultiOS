@@ -48,27 +48,55 @@ function renderHistorico() {
   const historico = getHistorico();
 
   if (!historico.length) {
-    container.innerHTML = "<span class='small'>Nenhum histórico salvo neste dispositivo.</span>";
+    container.innerHTML =
+      "<span class='small'>Nenhum histórico salvo neste dispositivo.</span>";
     return;
   }
 
+  const jogoAtual = getJogoAtual();
+
   container.innerHTML = "";
 
-  historico.forEach((item, idx) => {
+  historico.forEach((item) => {
     const div = document.createElement("div");
     div.className = "historico-item";
 
-    const jogos = item.jogos
-      .map(
-        (j, i) =>
-          `${i + 1}) ${j.map((n) => String(n).padStart(2, "0")).join(" - ")}`
-      )
-      .join("<br>");
+    const jogosHtml = item.jogos.map((jogo, idx) => {
+      // ===== Lotofácil: grade 5×N =====
+      if (jogoAtual === "lotofacil") {
+        const nums = jogo
+          .map(
+            (n) =>
+              `<div class="lotofacil-num">${String(n).padStart(2, "0")}</div>`
+          )
+          .join("");
+
+        return `
+          <div style="margin-top:6px;">
+            <b>${idx + 1})</b>
+            <div class="lotofacil-grid">
+              ${nums}
+            </div>
+          </div>
+        `;
+      }
+
+      // ===== Mega-Sena (layout atual) =====
+      return `
+        <div>
+          ${idx + 1}) ${jogo
+            .map((n) => String(n).padStart(2, "0"))
+            .join(" - ")}
+        </div>
+      `;
+    }).join("");
 
     div.innerHTML = `
-      <b>${item.data}</b><br>
-      <span class="small">Modo: ${item.modo} | Fonte: ${item.fonte}</span><br>
-      ${jogos}
+      <div><b>${item.data}</b></div>
+      <div class="small">Modo: ${item.modo} | Fonte: ${item.fonte}</div>
+      <div style="margin-top:6px;">
+        ${jogosHtml}
+      </div>
     `;
 
     container.appendChild(div);

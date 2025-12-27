@@ -1,4 +1,4 @@
-const CACHE_NAME = "megasurpresinhas-v10";
+const CACHE_NAME = "megasurpresinhas-v11";
 
 const ASSETS = [
   "/", // importante para fallback offline/navegação

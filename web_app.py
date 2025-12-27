@@ -176,6 +176,40 @@ HTML = """
     background: var(--box-bg);
   }
 
+  /* ===== Navegação entre jogos ===== */
+  .nav-game{
+    flex:1;
+    text-align:center;
+    padding:10px;
+    border:1px solid var(--border);
+    border-radius:10px;
+    background: var(--box-bg);
+    font-weight:bold;
+  }
+
+  .nav-game.active{
+    background: var(--btn-bg);
+    border-color: var(--btn-border);
+    box-shadow: inset 0 0 0 2px var(--btn-border);
+  }
+
+  /* ===== Lotofácil: layout em grade 5×N ===== */
+  .lotofacil-grid{
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  .lotofacil-num{
+    text-align: center;
+    padding: 6px 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--pre-bg);
+    font-weight: bold;
+  }
+
 </style>
 
 </head>
@@ -187,6 +221,16 @@ HTML = """
       <span id="theme-icon">🌙</span>
       <span id="theme-label">Modo escuro</span>
     </button>
+  </div>
+
+  <div class="box" style="display:flex; gap:10px;">
+    <a href="/" class="nav-game {{ 'active' if jogo_nome != 'lotofacil' else '' }}">
+      Mega-Sena
+    </a>
+
+    <a href="/lotofacil" class="nav-game {{ 'active' if jogo_nome == 'lotofacil' else '' }}">
+      Lotofácil
+    </a>
   </div>
 
   <div class="box">
@@ -349,6 +393,7 @@ def index():
         modo=None,
         msg_status=None,
         fonte=None,
+        jogo_nome="mega",
     )
 
 
