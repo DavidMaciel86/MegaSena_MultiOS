@@ -1,11 +1,20 @@
 /* ================================
    Histórico local (localStorage)
 ================================ */
-const STORAGE_KEY = "megasurpresinhas_historico";
+function getJogoAtual() {
+  const el = document.getElementById("historico-local");
+  const jogo = el?.dataset?.jogo || "mega";
+  return jogo;
+}
+
+function getStorageKey() {
+  const jogo = getJogoAtual();
+  return `megasurpresinhas_${jogo}_historico`;
+}
 
 function getHistorico() {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    return JSON.parse(localStorage.getItem(getStorageKey())) || [];
   } catch {
     return [];
   }
@@ -14,11 +23,11 @@ function getHistorico() {
 function salvarHistorico(item) {
   const historico = getHistorico();
   historico.unshift(item);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(historico));
+  localStorage.setItem(getStorageKey(), JSON.stringify(historico));
 }
 
 function limparHistorico() {
-  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(getStorageKey());
 }
 
 function handleLimparHistorico() {

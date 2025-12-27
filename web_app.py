@@ -20,6 +20,11 @@ from storage import (
     salvar_historico_json,
 )
 
+from core_lotofacil import (
+    preparar_pool_lotofacil_com_status,
+    gerar_surpresinhas_lotofacil,
+)
+
 app = Flask(__name__)
 
 
@@ -41,7 +46,7 @@ HTML = """
   <link rel="manifest" href="/static/manifest.webmanifest">
   <meta name="theme-color" content="#111111">
 
-  <title>MegaSurpresinhas Mega-Sena</title>
+  <title>{{ titulo or "MegaSurpresinhas Mega-Sena" }}</title>
 
   <style>
   :root{
@@ -160,7 +165,7 @@ HTML = """
   .quebra-grupo{
     height: 10px; /* "pula uma linha" visual a cada 3 jogos */
   }
-  
+
   /* ===== Histórico local em layout vertical ===== */
   .historico-item{
     display: block;
@@ -176,7 +181,7 @@ HTML = """
 </head>
 <body>
   <div class="topbar">
-    <h2 style="margin:0;">MegaSurpresinhas Mega-Sena</h2>
+    <h2 style="margin:0;">{{ titulo or "MegaSurpresinhas Mega-Sena" }}</h2>
 
     <button type="button" class="theme-btn" onclick="toggleTheme()">
       <span id="theme-icon">🌙</span>
@@ -185,7 +190,7 @@ HTML = """
   </div>
 
   <div class="box">
-    <form method="post" action="{{ url_for('gerar') }}">
+    <form method="post" action="{{ form_action or url_for('gerar') }}">
       <div class="row">
         <label>Seed (opcional)
           <input type="number" name="seed" placeholder="ENTER = aleatório" value="{{ seed or '' }}">
@@ -196,7 +201,11 @@ HTML = """
         </label>
 
         <label>Qtd. dezenas (6–12)
-          <input type="number" name="qtd_dezenas" min="6" max="12" value="{{ qtd_dezenas }}">
+          <input type="number" name="qtd_dezenas"
+                 min="{{ range_min_dezenas or 6 }}"
+                 max="{{ range_max_dezenas or 12 }}"
+                 value="{{ qtd_dezenas }}">
+
         </label>
 
         <button type="submit">Gerar</button>
@@ -263,7 +272,7 @@ HTML = """
   <div class="box">
     <b>Histórico neste dispositivo:</b>
 
-    <div id="historico-local" style="margin-top: 8px;"></div>
+    <div id="historico-local" data-jogo="{{ jogo_nome or 'mega' }}" style="margin-top: 8px;"></div>
 
     <button
       type="button"
@@ -290,16 +299,18 @@ HTML = """
 
       salvarHistorico({
         data: new Date().toLocaleString(),
+        jogo: "{{ jogo_nome or 'mega' }}",
         modo: "{{ modo }}",
         fonte: "{{ fonte }}",
         jogos: {{ resultado | tojson }}
       });
 
+
       renderHistorico();
     })();
   </script>
   {% endif %}
-  
+
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       if (typeof renderHistorico === "function") {
@@ -338,6 +349,145 @@ def index():
         modo=None,
         msg_status=None,
         fonte=None,
+    )
+
+
+@app.get("/lotofacil")
+def lotofacil_index():
+    pasta = str(obter_pasta_historico())
+    historicos = listar_historicos()[:10]
+
+    return render_template_string(
+        HTML,
+        # defaults da Lotofácil
+        seed=None,
+        qtd_surpresinhas=3,  # quantidade de jogos
+        qtd_dezenas=15,  # Lotofácil: 15–20
+        pasta_historico=pasta,
+        resultado=None,
+        caminho_salvo=None,
+        historicos=historicos,
+        historico_detalhe=None,
+        erro=None,
+        modo=None,
+        msg_status=None,
+        fonte=None,
+        # 👇 dica: usamos isso para o form apontar para /lotofacil/gerar
+        jogo_nome="lotofacil",
+        form_action=url_for("lotofacil_gerar"),
+        titulo="MegaSurpresinhas Lotofácil",
+        range_min_dezenas=15,
+        range_max_dezenas=20,
+    )
+
+
+@app.post("/lotofacil/gerar")
+def lotofacil_gerar():
+    seed_raw = request.form.get("seed", "").strip()
+    seed = _parse_int(seed_raw, default=0) if seed_raw else None
+
+    qtd_surpresinhas = _parse_int(request.form.get("qtd_surpresinhas", "3"), 3)
+    qtd_dezenas = _parse_int(request.form.get("qtd_dezenas", "15"), 15)
+
+    # validações específicas Lotofácil
+    if not (1 <= qtd_surpresinhas <= 12):
+        return _render_erro_lotofacil(
+            "Qtd. de surpresinhas deve ser entre 1 e 12.",
+            seed_raw,
+            qtd_surpresinhas,
+            qtd_dezenas,
+        )
+    if not (15 <= qtd_dezenas <= 20):
+        return _render_erro_lotofacil(
+            "Qtd. de dezenas da Lotofácil deve ser entre 15 e 20.",
+            seed_raw,
+            qtd_surpresinhas,
+            qtd_dezenas,
+        )
+
+    try:
+        aplicar_seed(seed)
+
+        pool, modo, fonte, msg_status = preparar_pool_lotofacil_com_status()
+        surpresinhas = gerar_surpresinhas_lotofacil(qtd_surpresinhas, qtd_dezenas, pool)
+
+        caminho = salvar_historico_json(
+            surpresinhas=surpresinhas,
+            qtd_dezenas=qtd_dezenas,
+            qtd_surpresinhas=qtd_surpresinhas,
+            seed=seed,
+        )
+
+    except (requests.exceptions.RequestException, RuntimeError):
+        return _render_erro_lotofacil(
+            "Falha ao acessar os resultados oficiais da Lotofácil. Verifique sua conexão.",
+            seed_raw,
+            qtd_surpresinhas,
+            qtd_dezenas,
+        )
+    except ValueError as e:
+        return _render_erro_lotofacil(
+            f"Erro de validação dos dados: {e}",
+            seed_raw,
+            qtd_surpresinhas,
+            qtd_dezenas,
+        )
+    except Exception as e:
+        return _render_erro_lotofacil(
+            f"Erro inesperado ao gerar as surpresinhas: {e}",
+            seed_raw,
+            qtd_surpresinhas,
+            qtd_dezenas,
+        )
+
+    pasta = str(obter_pasta_historico())
+    historicos = listar_historicos()[:10]
+
+    return render_template_string(
+        HTML,
+        seed=seed_raw,
+        qtd_surpresinhas=qtd_surpresinhas,
+        qtd_dezenas=qtd_dezenas,
+        pasta_historico=pasta,
+        resultado=surpresinhas,
+        caminho_salvo=str(caminho),
+        historicos=historicos,
+        historico_detalhe=None,
+        erro=None,
+        modo=modo,
+        msg_status=msg_status,
+        fonte=fonte,
+        jogo_nome="lotofacil",
+        form_action=url_for("lotofacil_gerar"),
+        titulo="MegaSurpresinhas Lotofácil",
+        range_min_dezenas=15,
+        range_max_dezenas=20,
+    )
+
+
+def _render_erro_lotofacil(msg: str, seed_raw: str, qtd_surpresinhas: int, qtd_dezenas: int):
+    pasta = str(obter_pasta_historico())
+    historicos = listar_historicos()[:10]
+
+    return render_template_string(
+        HTML,
+        seed=seed_raw,
+        qtd_surpresinhas=qtd_surpresinhas,
+        qtd_dezenas=qtd_dezenas,
+        pasta_historico=pasta,
+        resultado=None,
+        caminho_salvo=None,
+        historicos=historicos,
+        historico_detalhe=None,
+        erro=msg,
+        modo=None,
+        msg_status=None,
+        fonte=None,
+        jogo_nome="lotofacil",
+        form_action=url_for("lotofacil_gerar"),
+        titulo="MegaSurpresinhas Lotofácil",
+        range_min_dezenas=15,
+        range_max_dezenas=20,
     )
 
 
