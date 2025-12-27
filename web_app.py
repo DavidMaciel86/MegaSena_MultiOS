@@ -288,6 +288,14 @@ HTML = """
     })();
   </script>
   {% endif %}
+  
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      if (typeof renderHistorico === "function") {
+        renderHistorico();
+      }
+    });
+  </script>
 
 </body>
 </html>

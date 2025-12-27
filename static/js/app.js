@@ -31,3 +31,38 @@ function handleLimparHistorico() {
   renderHistorico();
   alert("Histórico limpo com sucesso.");
 }
+
+function renderHistorico() {
+  const container = document.getElementById("historico-local");
+  if (!container) return;
+
+  const historico = getHistorico();
+
+  if (!historico.length) {
+    container.innerHTML = "<span class='small'>Nenhum histórico salvo neste dispositivo.</span>";
+    return;
+  }
+
+  container.innerHTML = "";
+
+  historico.forEach((item, idx) => {
+    const div = document.createElement("div");
+    div.className = "pill";
+
+    const jogos = item.jogos
+      .map(
+        (j, i) =>
+          `${i + 1}) ${j.map((n) => String(n).padStart(2, "0")).join(" - ")}`
+      )
+      .join("<br>");
+
+    div.innerHTML = `
+      <b>${item.data}</b><br>
+      <span class="small">Modo: ${item.modo} | Fonte: ${item.fonte}</span><br>
+      ${jogos}
+    `;
+
+    container.appendChild(div);
+  });
+}
+
