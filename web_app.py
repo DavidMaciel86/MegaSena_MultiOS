@@ -160,6 +160,17 @@ HTML = """
   .quebra-grupo{
     height: 10px; /* "pula uma linha" visual a cada 3 jogos */
   }
+  
+  /* ===== Histórico local em layout vertical ===== */
+  .historico-item{
+    display: block;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--box-bg);
+  }
+
 </style>
 
 </head>

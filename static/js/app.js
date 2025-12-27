@@ -47,7 +47,7 @@ function renderHistorico() {
 
   historico.forEach((item, idx) => {
     const div = document.createElement("div");
-    div.className = "pill";
+    div.className = "historico-item";
 
     const jogos = item.jogos
       .map(
