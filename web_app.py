@@ -210,6 +210,22 @@ HTML = """
     font-weight: bold;
   }
 
+  /* ================================
+     Créditos no rodapé
+  ================================ */
+  .creditos{
+    margin-top: 18px;
+    padding: 10px 0 14px;
+    text-align: center;
+    font-size: 13px;
+    opacity: 0.85;
+  }
+
+  /* garante espaço pra não “colar” no final */
+  body{
+    padding-bottom: 30px;
+  }
+
 </style>
 
 </head>
@@ -362,7 +378,9 @@ HTML = """
       }
     });
   </script>
-
+  <footer class="creditos">
+  By David Maciel
+  </footer>
 </body>
 </html>
 """
