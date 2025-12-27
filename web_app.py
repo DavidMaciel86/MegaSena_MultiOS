@@ -41,7 +41,7 @@ HTML = """
   <link rel="manifest" href="/static/manifest.webmanifest">
   <meta name="theme-color" content="#111111">
 
-  <title>MegaSurpresinhas (Web)</title>
+  <title>MegaSurpresinhas Mega-Sena</title>
 
   <style>
   :root{
@@ -144,6 +144,22 @@ HTML = """
     gap:8px;
     font-size:12px;
   }
+
+  /* ✅ Resultado gerado: layout vertical + grupos de 3 */
+  .resultado-lista{
+    margin-top: 10px;
+  }
+
+  .linha-jogo{
+    margin: 4px 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+                 "Liberation Mono", "Courier New", monospace;
+    white-space: nowrap;
+  }
+
+  .quebra-grupo{
+    height: 10px; /* "pula uma linha" visual a cada 3 jogos */
+  }
 </style>
 
 </head>
@@ -216,12 +232,24 @@ HTML = """
   {% if resultado %}
     <div class="box">
       <b>Resultado gerado:</b>
-      <pre>{{ resultado }}</pre>
+
+      <div class="resultado-lista">
+        {% for jogo in resultado %}
+          <div class="linha-jogo">
+            {{ loop.index }}) {% for n in jogo %}{{ "%02d"|format(n) }}{% if not loop.last %} - {% endif %}{% endfor %}
+          </div>
+
+          {% if loop.index % 3 == 0 and not loop.last %}
+            <div class="quebra-grupo"></div>
+          {% endif %}
+        {% endfor %}
+      </div>
+
       <div class="small">Histórico salvo em: <b>{{ caminho_salvo }}</b></div>
     </div>
   {% endif %}
 
-    <div class="box">
+  <div class="box">
     <b>Histórico neste dispositivo:</b>
 
     <div id="historico-local" style="margin-top: 8px;"></div>
@@ -240,8 +268,8 @@ HTML = """
   </div>
 
   <script src="/static/js/app.js"></script>
-  
-    {% if resultado %}
+
+  {% if resultado %}
   <script>
     salvarHistorico({
       data: new Date().toLocaleString(),
@@ -252,7 +280,6 @@ HTML = """
     renderHistorico();
   </script>
   {% endif %}
-
 
 </body>
 </html>

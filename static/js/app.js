@@ -1,38 +1,26 @@
-/* ================================
-   PWA - Service Worker
-================================ */
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", async () => {
-    try {
-      const reg = await navigator.serviceWorker.register("/sw.js");
-      console.log("✅ Service Worker registrado com escopo:", reg.scope);
-    } catch (err) {
-      console.error("❌ Falha ao registrar o Service Worker:", err);
-    }
-  });
-}
+function formatJogosHTML(jogos) {
+  if (!Array.isArray(jogos) || jogos.length === 0) return "";
 
-/* ================================
-   Histórico local (localStorage)
-================================ */
-const STORAGE_KEY = "megasurpresinhas_historico";
+  return `
+    <div class="resultado-lista">
+      ${jogos.map((jogo, idx) => {
+        const dezenas = (Array.isArray(jogo) ? jogo : [])
+          .map(n => String(n).padStart(2, "0"))
+          .join(" - ");
 
-function getHistorico() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-  } catch {
-    return [];
-  }
-}
+        const numero = idx + 1;
 
-function salvarHistorico(item) {
-  const historico = getHistorico();
-  historico.unshift(item);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(historico));
-}
+        const quebra = (numero % 3 === 0 && numero !== jogos.length)
+          ? `<div class="quebra-grupo"></div>`
+          : "";
 
-function limparHistorico() {
-  localStorage.removeItem(STORAGE_KEY);
+        return `
+          <div class="linha-jogo">${numero}) ${dezenas}</div>
+          ${quebra}
+        `;
+      }).join("")}
+    </div>
+  `;
 }
 
 function renderHistorico() {
@@ -42,7 +30,7 @@ function renderHistorico() {
   const historico = getHistorico();
   container.innerHTML = "";
 
-  if (historico.length === 0) {
+  if (!Array.isArray(historico) || historico.length === 0) {
     container.innerHTML =
       `<div class="small">Nenhum histórico salvo neste dispositivo.</div>`;
     return;
@@ -50,152 +38,17 @@ function renderHistorico() {
 
   historico.forEach((item, index) => {
     const div = document.createElement("div");
-    div.style.margin = "6px 0";
+    div.style.margin = "10px 0";
+
+    const meta = `${item.data || ""} — ${item.modo || ""} / ${item.fonte || ""}`;
+    const jogosHTML = formatJogosHTML(item.jogos || []);
+
     div.innerHTML = `
       <span class="pill">${index + 1}</span>
-      <span class="small">
-        ${item.data} — ${item.modo} / ${item.fonte}
-      </span>
-      <div class="small" style="margin-top:6px;">
-        ${item.jogos
-          .map((jogo, i) =>
-            `${i + 1}) ${jogo.map(n => String(n).padStart(2, "0")).join(" · ")}`
-          )
-          .join("<br>")}
-      </div>
-
+      <span class="small">${meta}</span>
+      ${jogosHTML}
     `;
+
     container.appendChild(div);
   });
 }
-
-function handleLimparHistorico() {
-  const ok = confirm(
-    "Tem certeza que deseja apagar todo o histórico gerado deste dispositivo?\n\nEssa ação não pode ser desfeita."
-  );
-  if (!ok) return;
-
-  limparHistorico();
-  renderHistorico();
-  alert("Histórico limpo com sucesso.");
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  renderHistorico();
-});
-
-/* ================================
-   PWA - Aviso de atualização
-================================ */
-let newWorker;
-
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.addEventListener("controllerchange", () => {
-    window.location.reload();
-  });
-
-  navigator.serviceWorker.ready.then((reg) => {
-    if (reg.waiting) {
-      showUpdateBanner(reg.waiting);
-    }
-
-    reg.addEventListener("updatefound", () => {
-      newWorker = reg.installing;
-      newWorker.addEventListener("statechange", () => {
-        if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-          showUpdateBanner(newWorker);
-        }
-      });
-    });
-  });
-}
-
-function showUpdateBanner(worker) {
-  if (document.getElementById("update-banner")) return;
-
-  const banner = document.createElement("div");
-  banner.id = "update-banner";
-  banner.style.position = "fixed";
-  banner.style.bottom = "16px";
-  banner.style.left = "50%";
-  banner.style.transform = "translateX(-50%)";
-  banner.style.background = "#111";
-  banner.style.color = "#fff";
-  banner.style.padding = "10px 14px";
-  banner.style.borderRadius = "10px";
-  banner.style.boxShadow = "0 4px 12px rgba(0,0,0,.3)";
-  banner.style.display = "flex";
-  banner.style.alignItems = "center";
-  banner.style.gap = "12px";
-  banner.style.zIndex = "9999";
-
-  banner.innerHTML = `
-    <span style="font-size:13px;">
-      🔄 Nova versão disponível
-    </span>
-    <button style="
-      background:#fff;
-      color:#111;
-      border:none;
-      padding:6px 10px;
-      border-radius:6px;
-      cursor:pointer;
-      font-size:12px;
-    ">
-      Atualizar
-    </button>
-  `;
-
-  banner.querySelector("button").onclick = () => {
-    worker.postMessage({ type: "SKIP_WAITING" });
-  };
-
-  document.body.appendChild(banner);
-}
-
-/* ================================
-   Tema (claro/escuro) com persistência
-================================ */
-const THEME_KEY = "megasurpresinhas_theme"; // "light" | "dark"
-
-function applyTheme(theme) {
-  const root = document.documentElement;
-  root.setAttribute("data-theme", theme);
-
-  const icon = document.getElementById("theme-icon");
-  const label = document.getElementById("theme-label");
-
-  if (icon && label) {
-    if (theme === "dark") {
-      icon.textContent = "☀️";
-      label.textContent = "Modo claro";
-    } else {
-      icon.textContent = "🌙";
-      label.textContent = "Modo escuro";
-    }
-  }
-}
-
-function getPreferredTheme() {
-  const saved = localStorage.getItem(THEME_KEY);
-  if (saved === "light" || saved === "dark") return saved;
-
-  // padrão: seguir o sistema na primeira vez
-  const prefersDark = window.matchMedia &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches;
-
-  return prefersDark ? "dark" : "light";
-}
-
-function toggleTheme() {
-  const current = document.documentElement.getAttribute("data-theme") || "light";
-  const next = current === "dark" ? "light" : "dark";
-  localStorage.setItem(THEME_KEY, next);
-  applyTheme(next);
-}
-
-// aplicar tema ao carregar
-document.addEventListener("DOMContentLoaded", () => {
-  applyTheme(getPreferredTheme());
-});
-
