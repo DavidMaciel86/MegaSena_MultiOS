@@ -23,7 +23,7 @@ def salvar_historico_json(
     surpresinhas: List[List[int]],
     qtd_dezenas: int,
     qtd_surpresinhas: int,
-    seed: Optional[int] = None,
+
 ) -> Path:
     pasta = obter_pasta_historico()
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -32,7 +32,6 @@ def salvar_historico_json(
     payload: Dict[str, Any] = {
         "meta": {
             "criado_em": datetime.now().isoformat(timespec="seconds"),
-            "seed": seed,
             "qtd_surpresinhas": qtd_surpresinhas,
             "qtd_dezenas": qtd_dezenas,
         },

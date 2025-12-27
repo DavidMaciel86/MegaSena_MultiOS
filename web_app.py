@@ -12,7 +12,7 @@ from flask import (
     make_response,
 )
 
-from core import aplicar_seed, gerar_surpresinhas, preparar_pool_com_globo_com_status
+from core import gerar_surpresinhas, preparar_pool_com_globo_com_status
 from storage import (
     obter_pasta_historico,
     listar_historicos,
@@ -81,6 +81,7 @@ HTML = """
     margin: 18px;
     background: var(--bg);
     color: var(--text);
+    padding-bottom: 30px; /* garante espaço pra não “colar” no final */
   }
 
   .box {
@@ -220,13 +221,7 @@ HTML = """
     font-size: 13px;
     opacity: 0.85;
   }
-
-  /* garante espaço pra não “colar” no final */
-  body{
-    padding-bottom: 30px;
-  }
-
-</style>
+  </style>
 
 </head>
 <body>
@@ -252,9 +247,6 @@ HTML = """
   <div class="box">
     <form method="post" action="{{ form_action or url_for('gerar') }}">
       <div class="row">
-        <label>Seed (opcional)
-          <input type="number" name="seed" placeholder="ENTER = aleatório" value="{{ seed or '' }}">
-        </label>
 
         <label>Qtd. surpresinhas (1–12)
           <input type="number" name="qtd_surpresinhas" min="1" max="12" value="{{ qtd_surpresinhas }}">
@@ -265,21 +257,11 @@ HTML = """
                  min="{{ range_min_dezenas or 6 }}"
                  max="{{ range_max_dezenas or 12 }}"
                  value="{{ qtd_dezenas }}">
-
         </label>
 
         <button type="submit">Gerar</button>
       </div>
     </form>
-
-    <p class="small">
-      <b>Seed utilizada:</b>
-      {% if seed is not none and seed != "" %}
-        {{ seed }}
-      {% else %}
-        aleatória
-      {% endif %}
-    </p>
 
     <p class="small">
       Pasta do histórico: <b>{{ pasta_historico }}</b>
@@ -365,7 +347,6 @@ HTML = """
         jogos: {{ resultado | tojson }}
       });
 
-
       renderHistorico();
     })();
   </script>
@@ -378,8 +359,9 @@ HTML = """
       }
     });
   </script>
+
   <footer class="creditos">
-  By David Maciel
+    By David Maciel
   </footer>
 </body>
 </html>
@@ -399,7 +381,6 @@ def index():
     historicos = listar_historicos()[:10]
     return render_template_string(
         HTML,
-        seed=None,
         qtd_surpresinhas=3,
         qtd_dezenas=6,
         pasta_historico=pasta,
@@ -423,7 +404,6 @@ def lotofacil_index():
     return render_template_string(
         HTML,
         # defaults da Lotofácil
-        seed=None,
         qtd_surpresinhas=3,  # quantidade de jogos
         qtd_dezenas=15,  # Lotofácil: 15–20
         pasta_historico=pasta,
@@ -446,9 +426,6 @@ def lotofacil_index():
 
 @app.post("/lotofacil/gerar")
 def lotofacil_gerar():
-    seed_raw = request.form.get("seed", "").strip()
-    seed = _parse_int(seed_raw, default=0) if seed_raw else None
-
     qtd_surpresinhas = _parse_int(request.form.get("qtd_surpresinhas", "3"), 3)
     qtd_dezenas = _parse_int(request.form.get("qtd_dezenas", "15"), 15)
 
@@ -456,49 +433,48 @@ def lotofacil_gerar():
     if not (1 <= qtd_surpresinhas <= 12):
         return _render_erro_lotofacil(
             "Qtd. de surpresinhas deve ser entre 1 e 12.",
-            seed_raw,
             qtd_surpresinhas,
             qtd_dezenas,
         )
+
     if not (15 <= qtd_dezenas <= 20):
         return _render_erro_lotofacil(
             "Qtd. de dezenas da Lotofácil deve ser entre 15 e 20.",
-            seed_raw,
             qtd_surpresinhas,
             qtd_dezenas,
         )
 
     try:
-        aplicar_seed(seed)
-
         pool, modo, fonte, msg_status = preparar_pool_lotofacil_com_status()
-        surpresinhas = gerar_surpresinhas_lotofacil(qtd_surpresinhas, qtd_dezenas, pool)
+        surpresinhas = gerar_surpresinhas_lotofacil(
+            qtd_surpresinhas,
+            qtd_dezenas,
+            pool,
+        )
 
         caminho = salvar_historico_json(
             surpresinhas=surpresinhas,
             qtd_dezenas=qtd_dezenas,
             qtd_surpresinhas=qtd_surpresinhas,
-            seed=seed,
         )
 
     except (requests.exceptions.RequestException, RuntimeError):
         return _render_erro_lotofacil(
             "Falha ao acessar os resultados oficiais da Lotofácil. Verifique sua conexão.",
-            seed_raw,
             qtd_surpresinhas,
             qtd_dezenas,
         )
+
     except ValueError as e:
         return _render_erro_lotofacil(
             f"Erro de validação dos dados: {e}",
-            seed_raw,
             qtd_surpresinhas,
             qtd_dezenas,
         )
+
     except Exception as e:
         return _render_erro_lotofacil(
             f"Erro inesperado ao gerar as surpresinhas: {e}",
-            seed_raw,
             qtd_surpresinhas,
             qtd_dezenas,
         )
@@ -508,7 +484,6 @@ def lotofacil_gerar():
 
     return render_template_string(
         HTML,
-        seed=seed_raw,
         qtd_surpresinhas=qtd_surpresinhas,
         qtd_dezenas=qtd_dezenas,
         pasta_historico=pasta,
@@ -528,13 +503,12 @@ def lotofacil_gerar():
     )
 
 
-def _render_erro_lotofacil(msg: str, seed_raw: str, qtd_surpresinhas: int, qtd_dezenas: int):
+def _render_erro_lotofacil(msg: str, qtd_surpresinhas: int, qtd_dezenas: int):
     pasta = str(obter_pasta_historico())
     historicos = listar_historicos()[:10]
 
     return render_template_string(
         HTML,
-        seed=seed_raw,
         qtd_surpresinhas=qtd_surpresinhas,
         qtd_dezenas=qtd_dezenas,
         pasta_historico=pasta,
@@ -556,9 +530,6 @@ def _render_erro_lotofacil(msg: str, seed_raw: str, qtd_surpresinhas: int, qtd_d
 
 @app.post("/gerar")
 def gerar():
-    seed_raw = request.form.get("seed", "").strip()
-    seed = _parse_int(seed_raw, default=0) if seed_raw else None
-
     qtd_surpresinhas = _parse_int(request.form.get("qtd_surpresinhas", "3"), 3)
     qtd_dezenas = _parse_int(request.form.get("qtd_dezenas", "6"), 6)
 
@@ -566,20 +537,18 @@ def gerar():
     if not (1 <= qtd_surpresinhas <= 12):
         return _render_erro(
             "Qtd. de surpresinhas deve ser entre 1 e 12.",
-            seed_raw,
             qtd_surpresinhas,
             qtd_dezenas,
         )
+
     if not (6 <= qtd_dezenas <= 12):
         return _render_erro(
             "Qtd. de dezenas deve ser entre 6 e 12.",
-            seed_raw,
             qtd_surpresinhas,
             qtd_dezenas,
         )
 
     try:
-        aplicar_seed(seed)
         pool, modo, fonte, msg_status = preparar_pool_com_globo_com_status()
         surpresinhas = gerar_surpresinhas(qtd_surpresinhas, qtd_dezenas, pool)
 
@@ -587,16 +556,11 @@ def gerar():
             surpresinhas=surpresinhas,
             qtd_dezenas=qtd_dezenas,
             qtd_surpresinhas=qtd_surpresinhas,
-            seed=seed,
         )
 
-    # ⬇️ AQUI está a principal adaptação:
     except (requests.exceptions.RequestException, RuntimeError):
-        # RequestException -> erro de rede / HTTP
-        # RuntimeError (ou similar) -> erro ao processar dados oficiais
         return _render_erro(
             "Falha ao acessar os resultados oficiais da Mega-Sena. Verifique sua conexão.",
-            seed_raw,
             qtd_surpresinhas,
             qtd_dezenas,
         )
@@ -604,7 +568,6 @@ def gerar():
     except ValueError as e:
         return _render_erro(
             f"Erro de validação dos dados: {e}",
-            seed_raw,
             qtd_surpresinhas,
             qtd_dezenas,
         )
@@ -612,7 +575,6 @@ def gerar():
     except Exception as e:
         return _render_erro(
             f"Erro inesperado ao gerar as surpresinhas: {e}",
-            seed_raw,
             qtd_surpresinhas,
             qtd_dezenas,
         )
@@ -620,9 +582,9 @@ def gerar():
     # sucesso
     pasta = str(obter_pasta_historico())
     historicos = listar_historicos()[:10]
+
     return render_template_string(
         HTML,
-        seed=seed_raw,
         qtd_surpresinhas=qtd_surpresinhas,
         qtd_dezenas=qtd_dezenas,
         pasta_historico=pasta,
@@ -634,6 +596,7 @@ def gerar():
         modo=modo,
         msg_status=msg_status,
         fonte=fonte,
+        jogo_nome="mega",
     )
 
 
@@ -650,7 +613,6 @@ def ver_historico(nome: str):
     historicos = listar_historicos()[:10]
     return render_template_string(
         HTML,
-        seed=None,
         qtd_surpresinhas=3,
         qtd_dezenas=6,
         pasta_historico=pasta_str,
@@ -662,15 +624,15 @@ def ver_historico(nome: str):
         modo=None,
         msg_status=None,
         fonte=None,
+        jogo_nome="mega",
     )
 
 
-def _render_erro(msg: str, seed_raw: str, qtd_surpresinhas: int, qtd_dezenas: int):
+def _render_erro(msg: str, qtd_surpresinhas: int, qtd_dezenas: int):
     pasta = str(obter_pasta_historico())
     historicos = listar_historicos()[:10]
     return render_template_string(
         HTML,
-        seed=seed_raw,
         qtd_surpresinhas=qtd_surpresinhas,
         qtd_dezenas=qtd_dezenas,
         pasta_historico=pasta,
@@ -682,6 +644,7 @@ def _render_erro(msg: str, seed_raw: str, qtd_surpresinhas: int, qtd_dezenas: in
         modo=None,
         msg_status=None,
         fonte=None,
+        jogo_nome="mega",
     )
 
 

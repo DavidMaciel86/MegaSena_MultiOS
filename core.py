@@ -194,8 +194,3 @@ def gerar_surpresinhas(
         surpresinhas.append(jogo)
 
     return surpresinhas
-
-
-def aplicar_seed(seed: Optional[int]) -> None:
-    if seed is not None:
-        random.seed(seed)
