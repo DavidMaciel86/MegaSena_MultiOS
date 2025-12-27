@@ -164,8 +164,8 @@ HTML = """
 
 </head>
 <body>
-    <div class="topbar">
-    <h2 style="margin:0;">MegaSurpresinhas</h2>
+  <div class="topbar">
+    <h2 style="margin:0;">MegaSurpresinhas Mega-Sena</h2>
 
     <button type="button" class="theme-btn" onclick="toggleTheme()">
       <span id="theme-icon">🌙</span>
@@ -271,13 +271,21 @@ HTML = """
 
   {% if resultado %}
   <script>
-    salvarHistorico({
-      data: new Date().toLocaleString(),
-      modo: "{{ modo }}",
-      fonte: "{{ fonte }}",
-      jogos: {{ resultado | tojson }}
-    });
-    renderHistorico();
+    (function () {
+      if (typeof salvarHistorico !== "function" || typeof renderHistorico !== "function") {
+        console.warn("Histórico: funções não carregadas (app.js).");
+        return;
+      }
+
+      salvarHistorico({
+        data: new Date().toLocaleString(),
+        modo: "{{ modo }}",
+        fonte: "{{ fonte }}",
+        jogos: {{ resultado | tojson }}
+      });
+
+      renderHistorico();
+    })();
   </script>
   {% endif %}
 

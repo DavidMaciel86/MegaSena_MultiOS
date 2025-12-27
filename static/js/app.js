@@ -1,54 +1,33 @@
-function formatJogosHTML(jogos) {
-  if (!Array.isArray(jogos) || jogos.length === 0) return "";
+/* ================================
+   Histórico local (localStorage)
+================================ */
+const STORAGE_KEY = "megasurpresinhas_historico";
 
-  return `
-    <div class="resultado-lista">
-      ${jogos.map((jogo, idx) => {
-        const dezenas = (Array.isArray(jogo) ? jogo : [])
-          .map(n => String(n).padStart(2, "0"))
-          .join(" - ");
-
-        const numero = idx + 1;
-
-        const quebra = (numero % 3 === 0 && numero !== jogos.length)
-          ? `<div class="quebra-grupo"></div>`
-          : "";
-
-        return `
-          <div class="linha-jogo">${numero}) ${dezenas}</div>
-          ${quebra}
-        `;
-      }).join("")}
-    </div>
-  `;
+function getHistorico() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  } catch {
+    return [];
+  }
 }
 
-function renderHistorico() {
-  const container = document.getElementById("historico-local");
-  if (!container) return;
-
+function salvarHistorico(item) {
   const historico = getHistorico();
-  container.innerHTML = "";
+  historico.unshift(item);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(historico));
+}
 
-  if (!Array.isArray(historico) || historico.length === 0) {
-    container.innerHTML =
-      `<div class="small">Nenhum histórico salvo neste dispositivo.</div>`;
-    return;
-  }
+function limparHistorico() {
+  localStorage.removeItem(STORAGE_KEY);
+}
 
-  historico.forEach((item, index) => {
-    const div = document.createElement("div");
-    div.style.margin = "10px 0";
+function handleLimparHistorico() {
+  const ok = confirm(
+    "Tem certeza que deseja apagar todo o histórico gerado deste dispositivo?\n\nEssa ação não pode ser desfeita."
+  );
+  if (!ok) return;
 
-    const meta = `${item.data || ""} — ${item.modo || ""} / ${item.fonte || ""}`;
-    const jogosHTML = formatJogosHTML(item.jogos || []);
-
-    div.innerHTML = `
-      <span class="pill">${index + 1}</span>
-      <span class="small">${meta}</span>
-      ${jogosHTML}
-    `;
-
-    container.appendChild(div);
-  });
+  limparHistorico();
+  renderHistorico();
+  alert("Histórico limpo com sucesso.");
 }
